@@ -1,0 +1,12 @@
+.env.local
+.env*.local
+node_modules/
+.next/
+out/
+work/
+package/
+outputs/
+*.tsbuildinfo
+*.png
+*.zip
+index.html
