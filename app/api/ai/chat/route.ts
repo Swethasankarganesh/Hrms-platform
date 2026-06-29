@@ -43,7 +43,24 @@ function buildSystemPrompt(ctx: HrContext): string {
 Professional but approachable. You are a trusted HR advisor, not a search engine.`;
 }
 
+const API_KEY = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+function textResponse(text: string, status = 200) {
+  return new Response(text, {
+    status,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
 export async function POST(req: Request) {
+  // Surface the most common misconfiguration as a visible message instead of
+  // an empty stream.
+  if (!API_KEY) {
+    return textResponse(
+      "AI is not configured: GEMINI_API_KEY is missing on the server. Add it in your Vercel project's Environment Variables and redeploy.",
+    );
+  }
+
   const { messages, hrContext } = (await req.json()) as {
     messages: { role: "user" | "assistant"; content: string }[];
     hrContext: HrContext;
@@ -53,7 +70,28 @@ export async function POST(req: Request) {
     model: google("gemini-2.0-flash"),
     system: buildSystemPrompt(hrContext),
     messages,
+    onError: ({ error }) => console.error("AI stream error:", error),
   });
 
-  return result.toTextStreamResponse();
+  // Manually pipe so streaming errors (e.g. an invalid key) become visible
+  // text in the chat instead of a silent empty response.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const delta of result.textStream) {
+          controller.enqueue(encoder.encode(delta));
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        controller.enqueue(encoder.encode(`\n[AI error: ${message}]`));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }
