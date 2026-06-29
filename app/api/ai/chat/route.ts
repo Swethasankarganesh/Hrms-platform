@@ -1,7 +1,14 @@
 import { streamText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export const maxDuration = 30;
+
+// Google Gemini has a free tier (no credit card). Get a key at
+// https://aistudio.google.com/apikey and set GEMINI_API_KEY (or
+// GOOGLE_GENERATIVE_AI_API_KEY) in your environment / Vercel project.
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
 
 interface HrContext {
   employeeCount: number;
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
   };
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-6"),
+    model: google("gemini-2.0-flash"),
     system: buildSystemPrompt(hrContext),
     messages,
   });

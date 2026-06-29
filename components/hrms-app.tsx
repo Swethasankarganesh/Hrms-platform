@@ -1414,7 +1414,7 @@ function useStreamingChat(hrContext: object) {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: "Sorry, I couldn't reach the AI. Please make sure ANTHROPIC_API_KEY is set in .env.local." }
+            ? { ...m, content: "Sorry, I couldn't reach the AI. Please make sure GEMINI_API_KEY is set in the environment." }
             : m,
         ),
       );
