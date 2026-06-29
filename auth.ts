@@ -1,9 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
+
+// Secret used to sign session JWTs. Prefer an env var (set AUTH_SECRET in
+// Vercel for real security); fall back to a constant so the demo deploys
+// without any configuration.
+const AUTH_SECRET =
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
+  "peopleflow-demo-secret-change-me-in-production";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: AUTH_SECRET,
+  trustHost: true, // required on Vercel / behind proxies
   session: { strategy: "jwt" },
   pages: { signIn: "/" },
   providers: [
@@ -18,19 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email    = credentials.email    as string;
         const password = credentials.password as string;
 
-        /* ── Try the database first ────────────────────────────── */
-        try {
-          const user = await prisma.user.findUnique({ where: { email } });
-          if (user) {
-            const valid = await bcrypt.compare(password, user.password);
-            if (!valid) return null;
-            return { id: user.id, email: user.email, name: user.name };
-          }
-        } catch {
-          /* DB not configured yet — fall through to demo credentials */
-        }
-
-        /* ── Demo fallback (works without a database) ──────────── */
+        /* ── Demo credentials (no database required) ───────────── */
         if (
           email    === "sweshinisankar@gmail.com" &&
           password === "swetha123"
