@@ -1488,20 +1488,25 @@ function AiWorkspace({ state }: { state: HrmsState }) {
           {/* Message thread */}
           {messages.length > 0 && (
             <div className="ai-messages">
-              {messages.map((m) => (
-                <div key={m.id} className={`ai-msg ai-msg-${m.role}`}>
-                  {m.role === "assistant" && (
-                    <span className="ai-msg-avatar"><Sparkles size={13} /></span>
-                  )}
-                  <div className="ai-msg-bubble">{m.content}</div>
-                  {m.role === "user" && (
-                    <span className="ai-msg-avatar">
-                      <span className="avatar orange" style={{ width: "1.75rem", height: "1.75rem", fontSize: ".65rem" }}>SS</span>
-                    </span>
-                  )}
-                </div>
-              ))}
-              {isLoading && (
+              {messages.map((m) => {
+                /* Skip the empty assistant placeholder — the typing indicator
+                   below stands in for it until the first token arrives. */
+                if (m.role === "assistant" && !m.content) return null;
+                return (
+                  <div key={m.id} className={`ai-msg ai-msg-${m.role}`}>
+                    {m.role === "assistant" && (
+                      <span className="ai-msg-avatar"><Sparkles size={13} /></span>
+                    )}
+                    <div className="ai-msg-bubble">{m.content}</div>
+                    {m.role === "user" && (
+                      <span className="ai-msg-avatar">
+                        <span className="avatar orange" style={{ width: "1.75rem", height: "1.75rem", fontSize: ".65rem" }}>SS</span>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {isLoading && !messages[messages.length - 1]?.content && (
                 <div className="ai-msg ai-msg-assistant">
                   <span className="ai-msg-avatar"><Sparkles size={13} /></span>
                   <div className="ai-msg-bubble ai-msg-typing"><span /><span /><span /></div>
