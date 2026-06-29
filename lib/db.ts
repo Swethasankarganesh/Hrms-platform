@@ -1,27 +1,23 @@
-import mongoose from "mongoose";
+import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error("Please define MONGODB_URI in .env.local");
-}
+// SQLite database file (relative to the project root). Override via DATABASE_URL.
+const DATABASE_URL = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
 
 declare global {
   // eslint-disable-next-line no-var
-  var _mongooseCache: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
+  var _prisma: PrismaClient | undefined;
 }
 
-const cached = global._mongooseCache ?? (global._mongooseCache = { conn: null, promise: null });
+// Prisma 7 connects through a driver adapter rather than a URL in schema.prisma.
+function createPrisma() {
+  const adapter = new PrismaBetterSqlite3({ url: DATABASE_URL });
+  return new PrismaClient({ adapter });
+}
 
-export async function connectDB() {
-  if (cached.conn) return cached.conn;
+// Reuse a single client across hot reloads in development.
+export const prisma = global._prisma ?? createPrisma();
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI as string, {
-      bufferCommands: false,
-    });
-  }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
+if (process.env.NODE_ENV !== "production") {
+  global._prisma = prisma;
 }

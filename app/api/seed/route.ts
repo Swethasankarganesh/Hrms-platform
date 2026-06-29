@@ -1,47 +1,45 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { connectDB } from "@/lib/db";
-import User from "@/lib/models/User";
-import Employee from "@/lib/models/Employee";
-import Leave from "@/lib/models/Leave";
-import Attendance, { Payroll } from "@/lib/models/Attendance";
+import { prisma } from "@/lib/db";
 import { seedState } from "@/lib/seed";
 
 export async function POST() {
-  await connectDB();
-
   const today = new Date().toISOString().split("T")[0];
 
   /* ── Admin user ──────────────────────────────────────────── */
-  const exists = await User.findOne({ email: "sweshinisankar@gmail.com" });
+  const exists = await prisma.user.findUnique({
+    where: { email: "sweshinisankar@gmail.com" },
+  });
   if (!exists) {
     const hash = await bcrypt.hash("swetha123", 12);
-    await User.create({
-      name:     "Swetha Sankar",
-      email:    "sweshinisankar@gmail.com",
-      password: hash,
-      role:     "admin",
+    await prisma.user.create({
+      data: {
+        name: "Swetha Sankar",
+        email: "sweshinisankar@gmail.com",
+        password: hash,
+        role: "admin",
+      },
     });
   }
 
   /* ── Employees ───────────────────────────────────────────── */
-  await Employee.deleteMany({});
-  await Employee.insertMany(seedState.employees);
+  await prisma.employee.deleteMany();
+  await prisma.employee.createMany({ data: seedState.employees });
 
   /* ── Leave requests ──────────────────────────────────────── */
-  await Leave.deleteMany({});
-  await Leave.insertMany(seedState.leaves);
+  await prisma.leave.deleteMany();
+  await prisma.leave.createMany({ data: seedState.leaves });
 
   /* ── Attendance ──────────────────────────────────────────── */
-  await Attendance.deleteMany({});
+  await prisma.attendance.deleteMany();
   const attendanceRecords = Object.entries(seedState.attendance).map(
     ([employeeId, rec]) => ({ ...rec, employeeId: Number(employeeId), date: today }),
   );
-  await Attendance.insertMany(attendanceRecords);
+  await prisma.attendance.createMany({ data: attendanceRecords });
 
   /* ── Payroll ─────────────────────────────────────────────── */
-  await Payroll.deleteMany({});
-  await Payroll.create({ month: "2026-06", status: seedState.payroll });
+  await prisma.payroll.deleteMany();
+  await prisma.payroll.create({ data: { month: "2026-06", status: seedState.payroll } });
 
   return NextResponse.json({ ok: true, message: "Database seeded successfully." });
 }

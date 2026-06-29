@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/db";
-import Attendance from "@/lib/models/Attendance";
+import { prisma } from "@/lib/db";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,13 +9,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params; // id = employeeId
   const body = await req.json();
   const date = body.date ?? new Date().toISOString().split("T")[0];
+  const employeeId = Number(id);
 
-  await connectDB();
-  const updated = await Attendance.findOneAndUpdate(
-    { employeeId: Number(id), date },
-    { $set: { status: body.status } },
-    { new: true, upsert: true },
-  ).lean();
+  const updated = await prisma.attendance.upsert({
+    where: { employeeId_date: { employeeId, date } },
+    update: { status: body.status },
+    create: { employeeId, date, status: body.status },
+  });
 
   return NextResponse.json(updated);
 }

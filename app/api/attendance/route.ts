@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/db";
-import Attendance from "@/lib/models/Attendance";
+import { prisma } from "@/lib/db";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -10,12 +9,11 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date") ?? new Date().toISOString().split("T")[0];
 
-  await connectDB();
-  const records = await Attendance.find({ date }).lean();
+  const records = await prisma.attendance.findMany({ where: { date } });
 
   /* Return as Record<number, AttendanceRecord> for frontend compatibility */
   const map: Record<number, { status: string; clockIn: string; clockOut: string; hours: string }> = {};
-  for (const r of records as Array<{ employeeId: number; status: string; clockIn: string; clockOut: string; hours: string }>) {
+  for (const r of records) {
     map[r.employeeId] = { status: r.status, clockIn: r.clockIn, clockOut: r.clockOut, hours: r.hours };
   }
 

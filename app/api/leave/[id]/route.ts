@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/db";
-import Leave from "@/lib/models/Leave";
+import { prisma } from "@/lib/db";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,13 +9,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const { status } = await req.json();
 
-  await connectDB();
-  const updated = await Leave.findOneAndUpdate(
-    { id: Number(id) },
-    { $set: { status } },
-    { new: true },
-  ).lean();
-
-  if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(updated);
+  try {
+    const updated = await prisma.leave.update({
+      where: { id: Number(id) },
+      data: { status },
+    });
+    return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 }

@@ -10,3 +10,10 @@ outputs/
 *.png
 *.zip
 index.html
+
+.vercel
+
+# Prisma SQLite database files
+*.db
+*.db-journal
+prisma/*.db

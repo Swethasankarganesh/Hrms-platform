@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { connectDB } from "@/lib/db";
-import User from "@/lib/models/User";
+import { prisma } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -19,20 +18,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email    = credentials.email    as string;
         const password = credentials.password as string;
 
-        /* ── Try MongoDB first ─────────────────────────────────── */
+        /* ── Try the database first ────────────────────────────── */
         try {
-          await connectDB();
-          const user = await User.findOne({ email }).select("+password");
+          const user = await prisma.user.findUnique({ where: { email } });
           if (user) {
             const valid = await bcrypt.compare(password, user.password);
             if (!valid) return null;
-            return { id: user._id.toString(), email: user.email, name: user.name };
+            return { id: user.id, email: user.email, name: user.name };
           }
         } catch {
           /* DB not configured yet — fall through to demo credentials */
         }
 
-        /* ── Demo fallback (works without MongoDB) ─────────────── */
+        /* ── Demo fallback (works without a database) ──────────── */
         if (
           email    === "sweshinisankar@gmail.com" &&
           password === "swetha123"

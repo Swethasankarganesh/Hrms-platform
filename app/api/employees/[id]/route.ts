@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/db";
-import Employee from "@/lib/models/Employee";
+import { prisma } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
+
+const UPDATABLE = [
+  "name",
+  "role",
+  "department",
+  "email",
+  "status",
+  "location",
+  "joined",
+  "salary",
+  "score",
+] as const;
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,15 +22,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const body = await req.json();
 
-  await connectDB();
-  const updated = await Employee.findOneAndUpdate(
-    { id: Number(id) },
-    { $set: body },
-    { new: true },
-  ).lean();
+  /* Only copy known, present fields onto the update payload */
+  const data: Prisma.EmployeeUpdateInput = {};
+  for (const key of UPDATABLE) {
+    if (key in body && body[key] !== undefined) {
+      data[key] = key === "salary" || key === "score" ? Number(body[key]) : body[key];
+    }
+  }
 
-  if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(updated);
+  try {
+    const updated = await prisma.employee.update({
+      where: { id: Number(id) },
+      data,
+    });
+    return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -26,7 +46,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await connectDB();
-  await Employee.findOneAndDelete({ id: Number(id) });
+  await prisma.employee.delete({ where: { id: Number(id) } }).catch(() => {});
   return NextResponse.json({ ok: true });
 }

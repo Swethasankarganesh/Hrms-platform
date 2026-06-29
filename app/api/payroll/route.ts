@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/lib/db";
-import { Payroll } from "@/lib/models/Attendance";
+import { prisma } from "@/lib/db";
 
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await connectDB();
-  const record = await Payroll.findOne({ month: "2026-06" }).lean() as { status: string } | null;
+  const record = await prisma.payroll.findUnique({ where: { month: "2026-06" } });
   return NextResponse.json({ status: record?.status ?? "Draft" });
 }
 
@@ -17,13 +15,12 @@ export async function PUT(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { status } = await req.json();
-  await connectDB();
 
-  const record = await Payroll.findOneAndUpdate(
-    { month: "2026-06" },
-    { $set: { status } },
-    { new: true, upsert: true },
-  ).lean();
+  const record = await prisma.payroll.upsert({
+    where: { month: "2026-06" },
+    update: { status },
+    create: { month: "2026-06", status },
+  });
 
   return NextResponse.json(record);
 }
