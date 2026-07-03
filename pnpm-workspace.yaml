@@ -1,0 +1,6 @@
+# Allow Prisma to run its install/build scripts (pnpm 10+).
+# libSQL is pure JS, so no native build is required for the database driver.
+onlyBuiltDependencies:
+  - prisma
+  - '@prisma/client'
+  - '@prisma/engines'

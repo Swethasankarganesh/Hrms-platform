@@ -343,7 +343,7 @@ export function HrmsApp() {
           onNotifications={() => navigate("leave")}
         />
 
-        <div className="mx-auto max-w-400 px-6 py-8 sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+        <div className="app-content mx-auto max-w-400 px-6 py-8 sm:px-9 sm:py-10 lg:px-12 lg:py-12">
           <PageContent
             page={page}
             state={state}
@@ -357,14 +357,15 @@ export function HrmsApp() {
       </main>
 
       {/*
-        Overlay — shows on mobile/tablet (<1024px) when sidebar is open.
-        On desktop (≥1024px) there is no overlay; content simply shifts right.
+        Overlay — shows only on mobile (<640px) when sidebar is open, where
+        there's no room to push content. From ≥640px the content adjusts into
+        the remaining space instead (sm:ml-62), so no overlay is needed.
         z-40 = above topbar (z-20) but below sidebar (z-50).
       */}
       {menuOpen ? (
         <button
           aria-label="Close sidebar"
-          className="fixed inset-0 z-40 lg:hidden"
+          className="fixed inset-0 z-40 sm:hidden"
           style={{ background: "rgba(5,8,20,.52)", backdropFilter: "blur(3px)" }}
           onClick={() => setMenuOpen(false)}
         />
@@ -1597,20 +1598,19 @@ function Settings({ setState, notify }: Pick<StateProps, "setState" | "notify">)
         description="Configure organization, preferences, and workspace data."
       />
 
-      <div className="page-grid cols-settings">
-        {/* Sidebar nav */}
-        <article className="settings-nav-card card">
-          {settingsSections.map(({ label, Icon }) => (
+      <div className="settings-stack">
+        {/* Tab nav — underline style */}
+        <nav className="settings-tabs">
+          {settingsSections.map(({ label }) => (
             <button
               key={label}
-              className={`settings-nav-btn${section === label ? " active" : ""}`}
+              className={`settings-tab${section === label ? " active" : ""}`}
               onClick={() => setSection(label)}
             >
-              <Icon size={15} strokeWidth={2} />
               {label}
             </button>
           ))}
-        </article>
+        </nav>
 
         {/* Main panel — content switches by section */}
         <article className="card">

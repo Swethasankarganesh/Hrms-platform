@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -8,6 +9,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const { status } = await req.json();
 
-  /* No database: echo the updated leave back to the client. */
-  return NextResponse.json({ id: Number(id), status });
+  try {
+    const updated = await prisma.leave.update({ where: { id: Number(id) }, data: { status } });
+    return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 }

@@ -523,13 +523,25 @@ html[data-theme="dark"] .search-box { background: rgba(255,255,255,.04); }
 /* ══════════════════════════════════════════════════════════════
    STATS SECTION + PAGE GRIDS
 ══════════════════════════════════════════════════════════════ */
+/*
+  Container-query context: grids below size off the *available content
+  width*, not the viewport — so the whole page reflows correctly when the
+  sidebar is toggled (which shrinks/grows this region), not just on resize.
+*/
+.app-content {
+  container: appcontent / inline-size;
+}
+
 .stats-section {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
   margin-bottom: 2.75rem;
 }
-@media (min-width: 1280px) {
+@container appcontent (max-width: 460px) {
+  .stats-section { grid-template-columns: 1fr; }
+}
+@container appcontent (min-width: 1080px) {
   .stats-section { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
@@ -631,10 +643,10 @@ html[data-theme="dark"] .search-box { background: rgba(255,255,255,.04); }
 .page-grid.cols-reports {
   grid-template-columns: 1fr;
 }
-@media (min-width: 640px) {
+@container appcontent (min-width: 600px) {
   .page-grid.cols-reports { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (min-width: 1280px) {
+@container appcontent (min-width: 1080px) {
   .page-grid.cols-chart    { grid-template-columns: 1.65fr .85fr; }
   .page-grid.cols-perf     { grid-template-columns: 1.2fr .8fr;   }
   .page-grid.cols-ai       { grid-template-columns: 1.4fr .6fr;   }
@@ -642,7 +654,7 @@ html[data-theme="dark"] .search-box { background: rgba(255,255,255,.04); }
   .page-grid.cols-3        { grid-template-columns: repeat(3, minmax(0,1fr)); }
   .page-grid.cols-settings { grid-template-columns: 230px 1fr; }
 }
-@media (max-width: 1279px) {
+@container appcontent (max-width: 1079px) {
   .page-grid.cols-settings .hidden.xl\\:block { display: none; }
 }
 
@@ -1370,48 +1382,57 @@ html[data-theme="dark"] .search-box { background: rgba(255,255,255,.04); }
 /* ══════════════════════════════════════════════════════════════
    SETTINGS
 ══════════════════════════════════════════════════════════════ */
-.settings-nav-card {
+.settings-stack {
   display: flex;
   flex-direction: column;
-  gap: .2rem;
-  padding: .6rem;
-  height: fit-content;
+  gap: 1.5rem;
 }
 
-.settings-nav-btn {
+/* Underline tab nav (matches top-level nav style) */
+.settings-tabs {
   display: flex;
-  flex-direction: row;      /* explicit — prevents cascade from label/parent rules */
-  align-items: center;
-  width: 100%;
-  gap: .8rem;
-  border-radius: .75rem;
-  padding: .75rem 1rem;
-  text-align: left;
-  font-size: .84rem;
+  gap: 1.75rem;
+  padding: 0 .25rem;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.settings-tabs::-webkit-scrollbar { display: none; }
+
+.settings-tab {
+  position: relative;
+  padding: .65rem 0;
+  background: none;
+  border: none;
+  font-size: .9rem;
   font-weight: 500;
   color: var(--muted);
   white-space: nowrap;
-  transition: background .14s, color .14s;
+  cursor: pointer;
+  transition: color .14s;
 }
-.settings-nav-btn svg { flex-shrink: 0; }
-.settings-nav-btn:hover {
-  background: var(--bg);
+.settings-tab:hover { color: var(--ink); }
+.settings-tab.active {
   color: var(--ink);
-}
-.settings-nav-btn.active {
-  background: var(--blue-bg);
-  color: var(--blue);
   font-weight: 650;
-  border: 1px solid var(--blue-border);
 }
-.settings-nav-btn.active svg { color: var(--blue); }
+.settings-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--ink);
+}
 
 .settings-grid {
   display: grid;
   gap: 1.35rem;
   grid-template-columns: repeat(2, minmax(0,1fr));
 }
-@media (max-width: 639px) { .settings-grid { grid-template-columns: 1fr; } }
+@container appcontent (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
 
 .settings-footer {
   display: flex;
